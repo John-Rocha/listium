@@ -12,20 +12,39 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<Listium> listListiums = [];
-
+  List<Listium> listListiums = [];
   final _firestore = FirebaseFirestore.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    refresh();
+  }
 
   void _salvaListium(String name, BuildContext context) {
     final listium = Listium(
       id: const Uuid().v1(),
       name: name,
+      createdAt: DateTime.now(),
     );
     _firestore
         .collection('listiums')
         .doc(listium.id)
         .set(listium.toMap())
         .whenComplete(() => Navigator.of(context).pop());
+    refresh();
+  }
+
+  Future<void> refresh() async {
+    var tempList = <Listium>[];
+    final snapshot = await _firestore.collection('listiums').get();
+    for (var doc in snapshot.docs) {
+      tempList.add(Listium.fromMap(doc.data()));
+    }
+
+    setState(() {
+      listListiums = tempList;
+    });
   }
 
   @override
@@ -48,16 +67,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(fontSize: 18),
               ),
             )
-          : ListView.builder(
-              itemCount: listListiums.length,
-              itemBuilder: (context, index) {
-                Listium model = listListiums[index];
-                return ListTile(
-                  leading: const Icon(Icons.list_alt_rounded),
-                  title: Text(model.name),
-                  subtitle: Text(model.id),
-                );
-              },
+          : RefreshIndicator(
+              onRefresh: refresh,
+              child: ListView.builder(
+                itemCount: listListiums.length,
+                itemBuilder: (context, index) {
+                  listListiums.sort(
+                    (a, b) => b.createdAt.compareTo(a.createdAt),
+                  );
+                  Listium model = listListiums[index];
+                  return ListTile(
+                    leading: const Icon(Icons.list_alt_rounded),
+                    title: Text(model.name),
+                    subtitle: Text(model.id),
+                  );
+                },
+              ),
             ),
     );
   }
