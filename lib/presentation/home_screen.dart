@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:listium/core/helpers/date_format_utils.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/listium.dart';
@@ -21,12 +22,20 @@ class _HomeScreenState extends State<HomeScreen> {
     refresh();
   }
 
-  void _salvaListium(String name, BuildContext context) {
-    final listium = Listium(
+  void _salvaListium(String name, BuildContext context, Listium? model) {
+    Listium listium = Listium(
       id: const Uuid().v1(),
       name: name,
       createdAt: DateTime.now(),
     );
+
+    // User o ID do model
+    if (model != null) {
+      listium = model.copyWith(
+        name: name,
+        updatedAt: DateTime.now(),
+      );
+    }
     _firestore
         .collection('listiums')
         .doc(listium.id)
@@ -76,10 +85,36 @@ class _HomeScreenState extends State<HomeScreen> {
                     (a, b) => b.createdAt.compareTo(a.createdAt),
                   );
                   Listium model = listListiums[index];
-                  return ListTile(
-                    leading: const Icon(Icons.list_alt_rounded),
-                    title: Text(model.name),
-                    subtitle: Text(model.id),
+                  return Dismissible(
+                    key: ValueKey<Listium>(model),
+                    background: Container(
+                      padding: const EdgeInsets.only(right: 16),
+                      alignment: Alignment.centerRight,
+                      color: Colors.red,
+                      child: const Icon(
+                        Icons.delete,
+                        color: Colors.white,
+                      ),
+                    ),
+                    direction: DismissDirection.endToStart,
+                    onDismissed: (direction) {
+                      _removeListium(direction, model);
+                    },
+                    child: ListTile(
+                      leading: const Icon(Icons.list_alt_rounded),
+                      title: Text(model.name),
+                      subtitle: Text(
+                        'Criado em: ${DateFormatUtils.formatDateFromISO8601ToString(
+                          model.createdAt.toIso8601String(),
+                        )}',
+                      ),
+                      onTap: () {
+                        debugPrint(model.createdAt.toIso8601String());
+                      },
+                      onLongPress: () {
+                        showFormModal(model: model);
+                      },
+                    ),
                   );
                 },
               ),
@@ -87,7 +122,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  showFormModal() {
+  void _removeListium(DismissDirection direction, Listium model) {
+    if (direction == DismissDirection.endToStart) {
+      _firestore
+          .collection('listiums')
+          .doc(model.id)
+          .delete()
+          .whenComplete(() => refresh());
+    }
+  }
+
+  showFormModal({Listium? model}) {
     // Labels à serem mostradas no Modal
     String title = 'Adicionar Listium';
     String confirmationButton = 'Salvar';
@@ -95,6 +140,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Controlador do campo que receberá o nome do Listin
     TextEditingController nameController = TextEditingController();
+
+    // Caso esteja editando um Listium, preenche o campo com o nome atual
+
+    if (model != null) {
+      title = 'Editando ${model.name}';
+      nameController.text = model.name;
+    }
 
     // Função do Flutter que mostra o modal na tela
     showModalBottomSheet(
@@ -137,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      _salvaListium(nameController.text, context);
+                      _salvaListium(nameController.text, context, model);
                     },
                     child: Text(confirmationButton),
                   ),
