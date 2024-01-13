@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:listium/core/helpers/date_format_utils.dart';
+import 'package:listium/widgets/flush_bars.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/listium.dart';
@@ -98,6 +99,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     direction: DismissDirection.endToStart,
                     onDismissed: (direction) {
+                      final temp = listListiums.removeAt(index);
+                      FlushBars.undo(
+                        message: 'Você está prestes a excluir ${temp.name}',
+                        onUndo: () {
+                          _salvaListium(temp.name, context, model);
+                          listListiums.insert(index, temp);
+                          setState(() {});
+                        },
+                        duration: const Duration(seconds: 4),
+                      ).show(context);
+
                       _removeListium(direction, model);
                     },
                     child: ListTile(
