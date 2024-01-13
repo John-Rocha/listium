@@ -1,4 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
+
 import '../models/listium.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -9,16 +12,27 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<Listium> listListiums = [
-    Listium(id: 'L001', name: 'Feira de Outubro'),
-    Listium(id: 'L002', name: 'Feira de Novembro'),
-  ];
+  final List<Listium> listListiums = [];
+
+  final _firestore = FirebaseFirestore.instance;
+
+  void _salvaListium(String name, BuildContext context) {
+    final listium = Listium(
+      id: const Uuid().v1(),
+      name: name,
+    );
+    _firestore
+        .collection('listiums')
+        .doc(listium.id)
+        .set(listium.toMap())
+        .whenComplete(() => Navigator.of(context).pop());
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Listin - Feira Colaborativa'),
+        title: const Text('Listium - Feira Colaborativa'),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -50,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   showFormModal() {
     // Labels à serem mostradas no Modal
-    String title = 'Adicionar Listin';
+    String title = 'Adicionar Listium';
     String confirmationButton = 'Salvar';
     String skipButton = 'Cancelar';
 
@@ -79,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
               TextFormField(
                 controller: nameController,
                 decoration:
-                    const InputDecoration(label: Text('Nome do Listin')),
+                    const InputDecoration(label: Text('Nome do Listium')),
               ),
               const SizedBox(
                 height: 16,
@@ -97,12 +111,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 16,
                   ),
                   ElevatedButton(
-                      onPressed: () {
-                        //TODO: Implementar adição
-                      },
-                      child: Text(confirmationButton)),
+                    onPressed: () {
+                      _salvaListium(nameController.text, context);
+                    },
+                    child: Text(confirmationButton),
+                  ),
                 ],
-              )
+              ),
             ],
           ),
         );
