@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:listium/core/helpers/date_format_utils.dart';
+import 'package:listium/presentation/produto_screen.dart';
 import 'package:listium/widgets/flush_bars.dart';
 import 'package:uuid/uuid.dart';
 
@@ -16,14 +17,18 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<Listium> listListiums = [];
   final _firestore = FirebaseFirestore.instance;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    refresh();
+    _refresh();
   }
 
   void _salvaListium(String name, BuildContext context, Listium? model) {
+    setState(() {
+      _isLoading = true;
+    });
     Listium listium = Listium(
       id: const Uuid().v1(),
       name: name,
@@ -41,11 +46,16 @@ class _HomeScreenState extends State<HomeScreen> {
         .collection('listiums')
         .doc(listium.id)
         .set(listium.toMap())
-        .whenComplete(() => Navigator.of(context).pop());
-    refresh();
+        .whenComplete(() {
+      Navigator.of(context).pop();
+      setState(() {
+        _isLoading = false;
+      });
+      _refresh();
+    });
   }
 
-  Future<void> refresh() async {
+  Future<void> _refresh() async {
     var tempList = <Listium>[];
     final snapshot = await _firestore.collection('listiums').get();
     for (var doc in snapshot.docs) {
@@ -78,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )
           : RefreshIndicator(
-              onRefresh: refresh,
+              onRefresh: _refresh,
               child: ListView.builder(
                 itemCount: listListiums.length,
                 itemBuilder: (context, index) {
@@ -121,7 +131,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         )}',
                       ),
                       onTap: () {
-                        debugPrint(model.createdAt.toIso8601String());
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => ProdutoScreen(
+                              listium: model,
+                            ),
+                          ),
+                        );
                       },
                       onLongPress: () {
                         showFormModal(model: model);
@@ -140,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
           .collection('listiums')
           .doc(model.id)
           .delete()
-          .whenComplete(() => refresh());
+          .whenComplete(() => _refresh());
     }
   }
 
@@ -200,10 +216,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 16,
                   ),
                   ElevatedButton(
-                    onPressed: () {
-                      _salvaListium(nameController.text, context, model);
-                    },
-                    child: Text(confirmationButton),
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            _salvaListium(nameController.text, context, model);
+                          },
+                    child: _isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(),
+                          )
+                        : Text(confirmationButton),
                   ),
                 ],
               ),
