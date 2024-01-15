@@ -20,6 +20,12 @@ class MyApp extends StatelessWidget {
       title: 'Listium App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.greenAccent),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.greenAccent,
+          foregroundColor: Colors.black,
+          iconTheme: IconThemeData(color: Colors.black),
+        ),
+        scaffoldBackgroundColor: Colors.white,
         useMaterial3: true,
       ),
       home: const HomeScreen(),
