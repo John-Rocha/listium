@@ -72,6 +72,7 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
                   produto: produto,
                   isComprado: produto.isComprado,
                   showModal: showFormModal,
+                  iconClick: alternarComprado,
                 );
               }),
             ),
@@ -94,6 +95,7 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
                   produto: produto,
                   isComprado: true,
                   showModal: showFormModal,
+                  iconClick: alternarComprado,
                 );
               }),
             ),
@@ -286,5 +288,18 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
       listaProdutos.add(produto);
     }
     return listaProdutos;
+  }
+
+  alternarComprado(Produto produto) async {
+    produto.copyWith(isComprado: !produto.isComprado);
+    await _firestore
+        .collection('listiums')
+        .doc(widget.listium.id)
+        .collection('produtos')
+        .doc(produto.id)
+        .update({
+      'isComprado': !produto.isComprado,
+    });
+    refresh();
   }
 }
