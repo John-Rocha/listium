@@ -299,7 +299,7 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
     );
   }
 
-  Future<List<Produto>> refresh() async {
+  Future<void> refresh() async {
     List<Produto> listaProdutos = [];
     final snapshot = await _firestore
         .collection('listiums')
@@ -317,7 +317,6 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
       listaProdutos.add(produto);
     }
     filtrarProdutos(listaProdutos);
-    return listaProdutos;
   }
 
   void filtrarProdutos(List<Produto> listaProdutos) {
