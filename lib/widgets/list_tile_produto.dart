@@ -6,6 +6,7 @@ class ListTileProduto extends StatelessWidget {
   final bool isComprado;
   final Function showModal;
   final Function iconClick;
+  final Function deleteClick;
 
   const ListTileProduto({
     super.key,
@@ -13,6 +14,7 @@ class ListTileProduto extends StatelessWidget {
     required this.isComprado,
     required this.showModal,
     required this.iconClick,
+    required this.deleteClick,
   });
 
   @override
@@ -38,6 +40,15 @@ class ListTileProduto extends StatelessWidget {
         (produto.price == null)
             ? 'Clique para adicionar preço'
             : 'R\$ ${produto.price!}',
+      ),
+      trailing: IconButton(
+        onPressed: () {
+          deleteClick(produto);
+        },
+        icon: const Icon(
+          Icons.delete,
+          color: Colors.red,
+        ),
       ),
     );
   }

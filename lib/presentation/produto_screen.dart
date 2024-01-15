@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:listium/core/helpers/enum_ordem_produto.dart';
@@ -23,10 +25,18 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
   OrdemProduto ordem = OrdemProduto.name;
   bool isDecrescente = false;
 
+  late StreamSubscription _streamSubscription;
+
   @override
   void initState() {
-    refresh();
+    setupListeners();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _streamSubscription.cancel();
+    super.dispose();
   }
 
   @override
@@ -50,9 +60,7 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showFormModal();
-        },
+        onPressed: showFormModal,
         child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
@@ -94,6 +102,7 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
                   isComprado: produto.isComprado,
                   showModal: showFormModal,
                   iconClick: alternarComprado,
+                  deleteClick: removeProduto,
                 );
               }),
             ),
@@ -117,6 +126,7 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
                   isComprado: true,
                   showModal: showFormModal,
                   iconClick: alternarComprado,
+                  deleteClick: removeProduto,
                 );
               }),
             ),
@@ -299,9 +309,10 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
     );
   }
 
-  Future<void> refresh() async {
+  Future<void> refresh({QuerySnapshot<Map<String, dynamic>>? snapshot}) async {
     List<Produto> listaProdutos = [];
-    final snapshot = await _firestore
+
+    snapshot ??= await _firestore
         .collection('listiums')
         .doc(widget.listium.id)
         .collection('produtos')
@@ -311,6 +322,8 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
           descending: isDecrescente,
         )
         .get();
+
+    escutaTipoDeMudancaDoDocumento(snapshot);
 
     for (var doc in snapshot.docs) {
       Produto produto = Produto.fromMap(doc.data());
@@ -347,6 +360,65 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
         .update({
       'isComprado': !produto.isComprado,
     });
-    refresh();
+  }
+
+  void setupListeners() {
+    _streamSubscription = _firestore
+        .collection('listiums')
+        .doc(widget.listium.id)
+        .collection('produtos')
+        .orderBy(ordem.name, descending: isDecrescente)
+        .snapshots()
+        .listen(
+      (snapshot) {
+        escutaTipoDeMudancaDoDocumento(snapshot);
+        refresh(snapshot: snapshot);
+      },
+    );
+  }
+
+  void escutaTipoDeMudancaDoDocumento(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    if (snapshot.docChanges.length == 1) {
+      for (var docChange in snapshot.docChanges) {
+        Produto produto = Produto.fromMap(docChange.doc.data()!);
+        String tipoAlteracao = '';
+        Color cor = Colors.white;
+
+        switch (docChange.type) {
+          case DocumentChangeType.added:
+            tipoAlteracao = 'Produto ${produto.name} adicionado';
+            cor = Colors.green;
+            break;
+          case DocumentChangeType.modified:
+            tipoAlteracao = 'Produto ${produto.name} modificado';
+            cor = Colors.orange;
+            break;
+          case DocumentChangeType.removed:
+            tipoAlteracao = 'Produto ${produto.name} removido';
+            cor = Colors.red;
+            break;
+        }
+
+        ScaffoldMessenger.of(context)
+          ..hideCurrentMaterialBanner()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(tipoAlteracao),
+              backgroundColor: cor,
+            ),
+          );
+      }
+    }
+  }
+
+  Future<void> removeProduto(Produto produto) async {
+    await _firestore
+        .collection('listiums')
+        .doc(widget.listium.id)
+        .collection('produtos')
+        .doc(produto.id)
+        .delete();
   }
 }
