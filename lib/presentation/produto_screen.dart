@@ -36,6 +36,7 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
         title: Text(widget.listium.name),
         actions: [
           PopupMenuButton(
+            tooltip: 'Ordenar lista',
             itemBuilder: (context) {
               return OrdemProduto.values.map((ordemProduto) {
                 return PopupMenuItem(
@@ -44,12 +45,7 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
                 );
               }).toList();
             },
-            onSelected: (value) {
-              debugPrint('Ordem: $value');
-              setState(() {
-                ordem = value;
-              });
-            },
+            onSelected: _ordenarProdutos,
           ),
         ],
       ),
@@ -128,6 +124,18 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
         ),
       ),
     );
+  }
+
+  void _ordenarProdutos(ordemValue) {
+    setState(() {
+      if (ordem == ordemValue) {
+        isDecrescente = !isDecrescente;
+      } else {
+        ordem = ordemValue;
+        isDecrescente = false;
+      }
+    });
+    refresh();
   }
 
   showFormModal({Produto? model}) {
@@ -291,33 +299,46 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
     );
   }
 
-  Future<void> refresh() async {
-    var tempListProdutosPlanejados = await filtrarProdutos(isComprado: false);
-    var tempListProdutosComprados = await filtrarProdutos(isComprado: true);
-
-    setState(() {
-      listaProdutosPlanejados = tempListProdutosPlanejados;
-      listaProdutosPegos = tempListProdutosComprados;
-    });
-  }
-
-  Future<List<Produto>> filtrarProdutos({required bool isComprado}) async {
+  Future<List<Produto>> refresh() async {
     List<Produto> listaProdutos = [];
     final snapshot = await _firestore
         .collection('listiums')
         .doc(widget.listium.id)
         .collection('produtos')
-        .where('isComprado', isEqualTo: isComprado)
+        // .where('isComprado', isEqualTo: isComprado)
+        .orderBy(
+          ordem.name,
+          descending: isDecrescente,
+        )
         .get();
 
     for (var doc in snapshot.docs) {
       Produto produto = Produto.fromMap(doc.data());
       listaProdutos.add(produto);
     }
+    filtrarProdutos(listaProdutos);
     return listaProdutos;
   }
 
-  alternarComprado(Produto produto) async {
+  void filtrarProdutos(List<Produto> listaProdutos) {
+    var listaTempPlanejados = <Produto>[];
+    var listaTempComprados = <Produto>[];
+
+    for (var produto in listaProdutos) {
+      if (produto.isComprado) {
+        listaTempComprados.add(produto);
+      } else {
+        listaTempPlanejados.add(produto);
+      }
+    }
+
+    setState(() {
+      listaProdutosPlanejados = listaTempPlanejados;
+      listaProdutosPegos = listaTempComprados;
+    });
+  }
+
+  Future<void> alternarComprado(Produto produto) async {
     produto.copyWith(isComprado: !produto.isComprado);
     await _firestore
         .collection('listiums')
