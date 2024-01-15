@@ -69,13 +69,13 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
           children: [
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
-              child: const Column(
+              child: Column(
                 children: [
                   Text(
-                    'R\$${0}',
-                    style: TextStyle(fontSize: 42),
+                    'R\$${calcularPrecosPegos().toStringAsFixed(2)}',
+                    style: const TextStyle(fontSize: 42),
                   ),
-                  Text(
+                  const Text(
                     'total previsto para essa compra',
                     style: TextStyle(fontStyle: FontStyle.italic),
                   ),
@@ -268,17 +268,19 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
                         produto = model.copyWith(
                           name: nameController.text,
                           isComprado: isComprado,
+                          amount: double.parse(amountController.text),
+                          price: double.parse(priceController.text),
                           updatedAt: DateTime.now(),
                         );
                       }
 
-                      if (amountController.text != '') {
+                      if (amountController.text.isEmpty) {
                         produto.copyWith(
                           amount: double.parse(amountController.text),
                         );
                       }
 
-                      if (priceController.text != '') {
+                      if (priceController.text.isEmpty) {
                         produto.copyWith(
                           price: double.parse(priceController.text),
                         );
@@ -291,9 +293,6 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
                           .collection('produtos')
                           .doc(produto.id)
                           .set(produto.toMap());
-
-                      // Atualizar a lista
-                      refresh();
 
                       // Fechar o Modal
                       Navigator.pop(context);
@@ -323,7 +322,7 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
         )
         .get();
 
-    escutaTipoDeMudancaDoDocumento(snapshot);
+    verificarAlteracoes(snapshot);
 
     for (var doc in snapshot.docs) {
       Produto produto = Produto.fromMap(doc.data());
@@ -371,22 +370,21 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
         .snapshots()
         .listen(
       (snapshot) {
-        escutaTipoDeMudancaDoDocumento(snapshot);
         refresh(snapshot: snapshot);
       },
     );
   }
 
-  void escutaTipoDeMudancaDoDocumento(
+  void verificarAlteracoes(
     QuerySnapshot<Map<String, dynamic>> snapshot,
   ) {
     if (snapshot.docChanges.length == 1) {
-      for (var docChange in snapshot.docChanges) {
-        Produto produto = Produto.fromMap(docChange.doc.data()!);
+      for (var change in snapshot.docChanges) {
+        Produto produto = Produto.fromMap(change.doc.data()!);
         String tipoAlteracao = '';
         Color cor = Colors.white;
 
-        switch (docChange.type) {
+        switch (change.type) {
           case DocumentChangeType.added:
             tipoAlteracao = 'Produto ${produto.name} adicionado';
             cor = Colors.green;
@@ -420,5 +418,15 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
         .collection('produtos')
         .doc(produto.id)
         .delete();
+  }
+
+  double calcularPrecosPegos() {
+    double total = 0;
+    for (var produto in listaProdutosPegos) {
+      if (produto.amount != null && produto.price != null) {
+        total += (produto.amount! * produto.price!);
+      }
+    }
+    return total;
   }
 }
