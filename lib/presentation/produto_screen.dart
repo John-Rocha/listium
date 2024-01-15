@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:listium/core/helpers/enum_ordem_produto.dart';
 import 'package:listium/models/listium.dart';
 import 'package:listium/models/produto.dart';
 import 'package:listium/widgets/list_tile_produto.dart';
@@ -15,8 +16,12 @@ class ProdutoScreen extends StatefulWidget {
 
 class _ProdutoScreenState extends State<ProdutoScreen> {
   final _firestore = FirebaseFirestore.instance;
+
   List<Produto> listaProdutosPlanejados = [];
   List<Produto> listaProdutosPegos = [];
+
+  OrdemProduto ordem = OrdemProduto.name;
+  bool isDecrescente = false;
 
   @override
   void initState() {
@@ -27,7 +32,27 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.listium.name)),
+      appBar: AppBar(
+        title: Text(widget.listium.name),
+        actions: [
+          PopupMenuButton(
+            itemBuilder: (context) {
+              return OrdemProduto.values.map((ordemProduto) {
+                return PopupMenuItem(
+                  value: ordemProduto,
+                  child: Text('Ordenar por ${ordemProduto.label}'),
+                );
+              }).toList();
+            },
+            onSelected: (value) {
+              debugPrint('Ordem: $value');
+              setState(() {
+                ordem = value;
+              });
+            },
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showFormModal();
@@ -152,8 +177,10 @@ class _ProdutoScreenState extends State<ProdutoScreen> {
           // Formulário com Título, Campo e Botões
           child: ListView(
             children: [
-              Text(labelTitle,
-                  style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                labelTitle,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
               TextFormField(
                 controller: nameController,
                 keyboardType: TextInputType.name,
