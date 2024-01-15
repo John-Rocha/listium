@@ -91,6 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onRefresh: _refresh,
               child: ListView.builder(
                 itemCount: listListiums.length,
+                padding: const EdgeInsets.all(8),
                 itemBuilder: (context, index) {
                   listListiums.sort(
                     (a, b) => b.createdAt.compareTo(a.createdAt),
@@ -122,26 +123,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       _removeListium(direction, model);
                     },
-                    child: ListTile(
-                      leading: const Icon(Icons.list_alt_rounded),
-                      title: Text(model.name),
-                      subtitle: Text(
-                        'Criado em: ${DateFormatUtils.formatDateFromISO8601ToString(
-                          model.createdAt.toIso8601String(),
-                        )}',
-                      ),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => ProdutoScreen(
-                              listium: model,
+                    child: Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.list_alt_rounded),
+                        title: Text(model.name),
+                        subtitle: Text(
+                          'Criado em: ${DateFormatUtils.formatDateFromISO8601ToString(
+                            model.createdAt.toIso8601String(),
+                          )}',
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => ProdutoScreen(
+                                listium: model,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      onLongPress: () {
-                        showFormModal(model: model);
-                      },
+                          );
+                        },
+                        onLongPress: () {
+                          showFormModal(model: model);
+                        },
+                      ),
                     ),
                   );
                 },
