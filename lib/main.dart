@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:listium/core/ui/my_colors.dart';
 import 'package:listium/firebase_options.dart';
 import 'package:listium/presentation/home_screen.dart';
 
@@ -21,14 +22,25 @@ class MyApp extends StatelessWidget {
       title: 'Listium App',
       debugShowCheckedModeBanner: kDebugMode ? true : false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.greenAccent),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.greenAccent,
-          foregroundColor: Colors.black,
-          iconTheme: IconThemeData(color: Colors.black),
+        colorScheme: ColorScheme.fromSeed(seedColor: MyColors.brown),
+        scaffoldBackgroundColor: MyColors.green,
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: MyColors.red,
         ),
-        scaffoldBackgroundColor: Colors.white,
-        useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          toolbarHeight: 72,
+          centerTitle: true,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(32),
+            ),
+          ),
+        ),
+        listTileTheme: const ListTileThemeData(
+          iconColor: MyColors.blue,
+        ),
+        useMaterial3: false,
       ),
       home: const HomeScreen(),
     );

@@ -1,4 +1,4 @@
-extension StringFormatUtils on String {
+extension CaptalizeString on String {
   String capitalize() {
     return '${this[0].toUpperCase()}${substring(1)}';
   }
